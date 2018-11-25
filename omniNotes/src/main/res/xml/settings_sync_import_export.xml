@@ -30,5 +30,11 @@
         android:key="settings_import_from_springpad"
         android:title="@string/settings_import_from_springpad"
         android:summary="@string/settings_import_from_springpad_summary" />
+    <Preference
+        android:key="settings_import_from_google_keep"
+        android:title="@string/settings_import_from_google_keep"
+        android:summary="@string/settings_import_from_google_keep_summary"
+        />
+
 
 </PreferenceScreen>

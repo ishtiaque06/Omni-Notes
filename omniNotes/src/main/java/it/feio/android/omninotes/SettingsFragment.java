@@ -63,6 +63,7 @@ public class SettingsFragment extends PreferenceFragment {
 	private SharedPreferences prefs;
 
 	private final int SPRINGPAD_IMPORT = 0;
+	private final int GOOGLE_KEEP_IMPORT = 25;
 	private final int RINGTONE_REQUEST_CODE = 100;
 	public final static String XML_NAME = "xmlName";
 	private Activity activity;
@@ -178,6 +179,25 @@ public class SettingsFragment extends PreferenceFragment {
 				return false;
 			});
 		}
+
+		// Import notes from Google Keep zip file
+		Preference importFromGoogleKeep = findPreference("settings_import_from_google_keep");
+		if (importFromGoogleKeep != null) {
+			importFromGoogleKeep.setOnPreferenceClickListener(arg0 -> {
+				Intent intent;
+				intent = new Intent(Intent.ACTION_GET_CONTENT);
+				intent.addCategory(Intent.CATEGORY_OPENABLE);
+				intent.setType("application/zip");
+				if (!IntentChecker.isAvailable(getActivity(), intent, null)) {
+					Toast.makeText(getActivity(), R.string.feature_not_available_on_this_device,
+							Toast.LENGTH_SHORT).show();
+					return false;
+				}
+				startActivityForResult(intent, GOOGLE_KEEP_IMPORT);
+				return false;
+			});
+		}
+
 
 
 //		Preference syncWithDrive = findPreference("settings_backup_drive");
@@ -671,6 +691,12 @@ public class SettingsFragment extends PreferenceFragment {
 					service.setAction(DataBackupIntentService.ACTION_DATA_IMPORT_SPRINGPAD);
 					service.putExtra(DataBackupIntentService.EXTRA_SPRINGPAD_BACKUP, path);
 					getActivity().startService(service);
+					break;
+				case GOOGLE_KEEP_IMPORT:
+					Uri filesGoogleUri = intent.getData();
+					String keepPath = FileHelper.getPath(getActivity(), filesGoogleUri);
+
+					Toast.makeText(getActivity(), keepPath, Toast.LENGTH_SHORT).show();
 					break;
 
 				case RINGTONE_REQUEST_CODE:
