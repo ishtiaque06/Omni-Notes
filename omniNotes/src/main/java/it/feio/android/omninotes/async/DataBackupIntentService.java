@@ -410,9 +410,29 @@ public class DataBackupIntentService extends IntentService implements OnAttachin
         createNotification(intent, this, title, text, null);
     }
 
+    /*
+    * Imports Google Keep notes from a ZIP file containing Google Keep notes
+    * taken from Google Takeout.
+    *
+    * Procedures:
+    * 1. Takes in the filepath of ZIP
+    * 2. Creates a googleKeepZipExtractor object (usage comments in relevant class)
+    * 3. Verifies ZipExtractor is reading from a Google Keep ZIP file.
+    * 4. Builds ArrayList<Jsoup.nodes.Document> and returns that ArrayList
+    * 5. Each Document in ArrayList, if valid HTML Keep Note, contains
+    *       i) title element (to be OmniNote Note's title)
+    *       ii) ".heading" element (time when the note was created) and
+    *       iii) ".content" element (contains the note's body)
+    * 6. The above data is then parsed by makeNoteFromHTML.buildKeepNote(), which generates a KeepNote
+    * 7. A KeepNote is very similar to Note, with the above fields described.
+    * 8. For each KeepNote, the data is transfered to a new Note
+    * 9. After the transfer, the new Note is saved in the database
+    * 10. A completion notification is shown (exactly the same as Springpad).
+    *
+    *
+    * */
     synchronized private void importDataFromGoogleKeep(Intent intent) throws IOException {
         String backupPath = intent.getStringExtra(EXTRA_GOOGLE_KEEP_BACKUP);
-        Log.d(EXTRA_GOOGLE_KEEP_BACKUP, backupPath);
         googleKeepZipExtractor zipExtractor = new googleKeepZipExtractor(backupPath);
         if (!zipExtractor.verifyKeepFolder()) {
             new NotificationsHelper(this)
@@ -422,15 +442,30 @@ public class DataBackupIntentService extends IntentService implements OnAttachin
                     .setLedActive().show();
             return;
         }
+
+        TimeZone tz = TimeZone.getDefault();    // To attach a timezone to the HTML notes
+        String zoneShort = tz.getDisplayName(false, TimeZone.SHORT);
         ArrayList<Document> notesList = zipExtractor.returnHtmlKeepNotes();
         for (Document note:notesList) {
-            Log.d("Hello", note.select(".heading").html());
+//            Log.d("Hello", String.valueOf(note.select(".content").text().length()));
+            makeNoteFromHTML noteHTML = new makeNoteFromHTML(note, zoneShort);
+            KeepNote toSave = noteHTML.buildKeepNote();
+            if (toSave.getContent().length() != 0
+                    || toSave.getContent().length() != 0) {
+                Note finalNote = new Note();
+                finalNote.setTitle(toSave.getTitle());
+                finalNote.setContent(toSave.getContent());
+                finalNote.setCreation(toSave.getCreationTime());
+
+                // Save the note in the database
+                DbHelper.getInstance().updateNote(finalNote, false);
+            }
         }
+
 
         String title = getString(R.string.data_import_completed);
         String text = getString(R.string.click_to_refresh_application);
         createNotification(intent, this, title, text, null);
-
     }
 
 

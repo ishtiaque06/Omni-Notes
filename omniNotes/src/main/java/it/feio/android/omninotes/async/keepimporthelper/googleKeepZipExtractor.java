@@ -57,9 +57,11 @@ public class googleKeepZipExtractor {
     // Returns an ArrayList of Document objects to make notes out of.
     // minimum length of a valid HTML filename: "Keep/h.html" == 11
     public ArrayList<Document> returnHtmlKeepNotes() throws IOException {
-        if (!this.verifyKeepFolder()) {
-            return mNotesList;
-        }
+        // This check has been moved to DataBackupInterntService but can be used
+        // if this extractor is ever used as its own module.
+//        if (!this.verifyKeepFolder()) {
+//            return mNotesList;
+//        }
         try {
             Enumeration<? extends ZipEntry> entries = mZipToExtract.entries();
             while (entries.hasMoreElements()) {
@@ -80,6 +82,8 @@ public class googleKeepZipExtractor {
                     String result = sb.toString();
                     if (result.length() != 0) {
                         Document doc = Jsoup.parse(result);
+
+                        // This class resides inside ".heading" so has been removed.
                         doc.select(".meta-icons").remove();
                         mNotesList.add(doc);
                     }
@@ -92,6 +96,7 @@ public class googleKeepZipExtractor {
         return mNotesList;
     }
 
+    // This method truncates the parent ZIP file's path from each file inside it
     private String truncateFilePath(ZipEntry entry) {
         return entry.getName().replaceFirst("\\w*/", "");
     }

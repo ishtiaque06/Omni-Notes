@@ -38,7 +38,7 @@ public class makeNoteFromHTMLTest {
         Document doc2 = Jsoup.parse(file2, "utf-8");
 
         noteMaker1.setDoc(doc1);
-        KeepNote note = noteMaker1.returnNote();
+        KeepNote note = noteMaker1.buildKeepNote();
         assertEquals(note.getTitle(), "Nov 25, 2018, 2:22:31 AM");
         assertEquals(note.getContent(), "New note without a title!");
         Long creationTime = note.getCreationTime();
