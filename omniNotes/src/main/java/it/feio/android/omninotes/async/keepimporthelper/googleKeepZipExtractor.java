@@ -80,6 +80,7 @@ public class googleKeepZipExtractor {
                     String result = sb.toString();
                     if (result.length() != 0) {
                         Document doc = Jsoup.parse(result);
+                        doc.select(".meta-icons").remove();
                         mNotesList.add(doc);
                     }
                 }

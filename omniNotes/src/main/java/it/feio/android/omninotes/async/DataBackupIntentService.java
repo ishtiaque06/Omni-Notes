@@ -43,10 +43,12 @@ import it.feio.android.springpadimporter.models.SpringpadAttachment;
 import it.feio.android.springpadimporter.models.SpringpadComment;
 import it.feio.android.springpadimporter.models.SpringpadElement;
 import it.feio.android.springpadimporter.models.SpringpadItem;
+import it.feio.android.omninotes.async.keepimporthelper.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.jsoup.nodes.Document;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,8 +63,10 @@ public class DataBackupIntentService extends IntentService implements OnAttachin
     public final static String ACTION_DATA_EXPORT = "action_data_export";
     public final static String ACTION_DATA_IMPORT = "action_data_import";
     public final static String ACTION_DATA_IMPORT_SPRINGPAD = "action_data_import_springpad";
+    public final static String ACTION_DATA_IMPORT_GOOGLE_KEEP = "action_data_import_google_keep";
     public final static String ACTION_DATA_DELETE = "action_data_delete";
     public final static String EXTRA_SPRINGPAD_BACKUP = "extra_springpad_backup";
+    public final static String EXTRA_GOOGLE_KEEP_BACKUP = "extra_google_keep_backup";
 
     private SharedPreferences prefs;
     private NotificationsHelper mNotificationsHelper;
@@ -93,6 +97,13 @@ public class DataBackupIntentService extends IntentService implements OnAttachin
             importDataFromSpringpad(intent);
         } else if (ACTION_DATA_DELETE.equals(intent.getAction())) {
             deleteData(intent);
+        }
+        else if (ACTION_DATA_IMPORT_GOOGLE_KEEP.equals(intent.getAction())) {
+            try {
+                importDataFromGoogleKeep(intent);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -399,6 +410,29 @@ public class DataBackupIntentService extends IntentService implements OnAttachin
         createNotification(intent, this, title, text, null);
     }
 
+    synchronized private void importDataFromGoogleKeep(Intent intent) throws IOException {
+        String backupPath = intent.getStringExtra(EXTRA_GOOGLE_KEEP_BACKUP);
+        Log.d(EXTRA_GOOGLE_KEEP_BACKUP, backupPath);
+        googleKeepZipExtractor zipExtractor = new googleKeepZipExtractor(backupPath);
+        if (!zipExtractor.verifyKeepFolder()) {
+            new NotificationsHelper(this)
+                    .createNotification(R.drawable.ic_emoticon_sad_white_24dp,
+                            getString(R.string.import_fail)
+                                    + ": " + "not a valid Google Keep ZIP", null)
+                    .setLedActive().show();
+            return;
+        }
+        ArrayList<Document> notesList = zipExtractor.returnHtmlKeepNotes();
+        for (Document note:notesList) {
+            Log.d("Hello", note.select(".heading").html());
+        }
+
+        String title = getString(R.string.data_import_completed);
+        String text = getString(R.string.click_to_refresh_application);
+        createNotification(intent, this, title, text, null);
+
+    }
+
 
     private void updateImportNotification(Importer importer) {
         mNotificationsHelper.setMessage(
@@ -432,7 +466,8 @@ public class DataBackupIntentService extends IntentService implements OnAttachin
         // The behavior differs depending on intent action
         Intent intentLaunch;
         if (DataBackupIntentService.ACTION_DATA_IMPORT.equals(intent.getAction())
-                || DataBackupIntentService.ACTION_DATA_IMPORT_SPRINGPAD.equals(intent.getAction())) {
+                || DataBackupIntentService.ACTION_DATA_IMPORT_SPRINGPAD.equals(intent.getAction())
+                || DataBackupIntentService.ACTION_DATA_IMPORT_GOOGLE_KEEP.equals(intent.getAction())) {
 			intentLaunch = new Intent(mContext, MainActivity.class);
 			intentLaunch.setAction(Constants.ACTION_RESTART_APP);
         } else {

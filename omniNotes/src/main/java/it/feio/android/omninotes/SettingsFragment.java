@@ -695,8 +695,17 @@ public class SettingsFragment extends PreferenceFragment {
 				case GOOGLE_KEEP_IMPORT:
 					Uri filesGoogleUri = intent.getData();
 					String keepPath = FileHelper.getPath(getActivity(), filesGoogleUri);
-
-					Toast.makeText(getActivity(), keepPath, Toast.LENGTH_SHORT).show();
+					// Launching IntentService similar to Springpad
+					Intent keepImportService = new Intent(
+							getActivity(), DataBackupIntentService.class
+					);
+					keepImportService.setAction(
+							DataBackupIntentService.ACTION_DATA_IMPORT_GOOGLE_KEEP
+					);
+					keepImportService.putExtra(DataBackupIntentService
+							.EXTRA_GOOGLE_KEEP_BACKUP, keepPath);
+					getActivity().startService(keepImportService);
+//					Toast.makeText(getActivity(), keepPath, Toast.LENGTH_SHORT).show();
 					break;
 
 				case RINGTONE_REQUEST_CODE:
@@ -706,7 +715,7 @@ public class SettingsFragment extends PreferenceFragment {
 					break;
 
 				default:
-					Log.e(Constants.TAG, "Wrong element choosen: " + requestCode);
+					Log.e(Constants.TAG, "Wrong element chosen: " + requestCode);
 			}
 		}
 	}

@@ -1,5 +1,8 @@
 package it.feio.android.omninotes.async.keepimporthelper;
 
+import org.joda.time.LocalDateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.Test;
@@ -8,6 +11,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.TimeZone;
 
 import static org.junit.Assert.*;
 
@@ -47,6 +52,24 @@ public class googleKeepZipExtractorTest {
         extractor2.returnHtmlKeepNotes();
 
         ArrayList<Document> notes = extractor3.returnHtmlKeepNotes();
+
+        doc1.select(".meta-icons").remove();
+        System.out.println(doc1.select(".heading").html());
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("MMM dd, yyyy, HH:mm:ss a");
+        LocalDateTime dateTime = LocalDateTime.parse(doc1.select(".heading").html(), formatter);
+        TimeZone tz = TimeZone.getDefault();
+        System.out.println(tz.getDisplayName(false, TimeZone.SHORT));
+        System.out.println(dateTime);
+        System.out.println(doc1.select(".heading").html());
+        System.out.println(doc1.title());
+        System.out.println(doc1.select(".content").html());
+
+
+        doc2.select(".meta-icons").remove();
+        System.out.println(doc2.select(".heading").html());
+        System.out.println(doc2.title());
+        System.out.println(doc2.select(".content").html());
+
         assertEquals(notes.get(0).title(), doc2.title());
         assertEquals(notes.get(1).title(), doc1.title());
     }
